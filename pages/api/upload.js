@@ -1,3 +1,7 @@
+import fs from 'fs';
+import path from 'path';
+import formidable from 'formidable';
+
 export const config = {
   api: {
     bodyParser: false,
@@ -5,20 +9,21 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  try {
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
+  const form = formidable({ multiples: false, uploadDir: './public/uploads', keepExtensions: true });
 
-    // Kamu bisa simpan buffer atau teruskan ke server AI nanti
-    res.status(200).json({
-      message: "Gambar diterima di Vercel",
-      ukuran: buffer.length,
+  form.parse(req, (err, fields, files) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Gagal mengupload gambar' });
+    }
+
+    const filePath = files.file[0].filepath;
+    const fileName = path.basename(filePath);
+
+    return res.status(200).json({
+      message: 'Gambar diterima di Vercel',
+      filename: fileName,
+      ukuran: files.file[0].size,
     });
-  } catch (error) {
-    console.error("Upload error:", error);
-    res.status(500).json({ error: "Gagal membaca gambar" });
-  }
+  });
 }
