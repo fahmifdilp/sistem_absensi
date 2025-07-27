@@ -12,17 +12,28 @@ export default async function handler(req, res) {
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      console.error("Parsing error", err);
-      return res.status(500).json({ error: "Upload gagal" });
+      console.error("Form parse error:", err);
+      return res.status(500).json({ error: "Upload gagal saat parsing" });
+    }
+
+    // Cek apakah file berhasil diterima
+    if (!files.file) {
+      console.error("Tidak ada file yang diterima:", files);
+      return res.status(400).json({ error: "File tidak ditemukan" });
     }
 
     const file = files.file;
-    const buffer = fs.readFileSync(file.filepath);
+    try {
+      const buffer = fs.readFileSync(file.filepath);
 
-    // Saat ini kita hanya return ukuran file sebagai bukti berhasil
-    return res.status(200).json({
-      message: "Gambar diterima di Vercel",
-      ukuran: buffer.length,
-    });
+      return res.status(200).json({
+        message: "Gambar diterima di Vercel",
+        filename: file.originalFilename,
+        ukuran: buffer.length,
+      });
+    } catch (e) {
+      console.error("Gagal baca file:", e);
+      return res.status(500).json({ error: "Gagal membaca file" });
+    }
   });
 }
